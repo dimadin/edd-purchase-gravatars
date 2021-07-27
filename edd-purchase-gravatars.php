@@ -234,9 +234,6 @@ if ( ! class_exists( 'EDD_Purchase_Gravatars' ) ) {
 			// unique $payment_ids
 			$payment_ids = $this->get_payment_ids( $download_id );
 
-			//	var_dump( $payment_ids );
-			//	 var_dump( $this->get_log_ids( get_the_ID() ) );
-
 			global $edd_options;
 
 			// return if no ID
