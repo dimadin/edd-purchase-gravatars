@@ -175,51 +175,65 @@ if ( ! class_exists( 'EDD_Purchase_Gravatars' ) ) {
 
 			global $edd_options;
 
-			$log_ids = $this->get_log_ids( $download_id );
+			$payment_ids = array();
 
-			if ( $log_ids ) {
+			if ( function_exists( 'edd_get_orders' ) ) {
 
-				$payment_ids = array();
+				$payment_ids = edd_get_orders( array(
+					'type'       => 'sale',
+					'status'     => 'complete',
+					'product_id' => $download_id,
+					'fields'     => 'ids',
+				) );
 
-				foreach ( $log_ids as $id ) {
-					// get the payment ID for each corresponding log ID
-					$payment_ids[] = get_post_meta( $id, '_edd_log_payment_id', true );
-				}
+			} else {
 
-				// remove customers who have purchased more than once so we can have unique gravatar imagesw
-				$unique_emails = array();
+				$log_ids = $this->get_log_ids( $download_id );
 
-				foreach ( $payment_ids as $key => $id ) {
+				if ( $log_ids ) {
 
-					$email = get_post_meta( $id, '_edd_payment_user_email', true );
-
-					if ( isset ( $edd_options['edd_pg_has_gravatar_account'] ) ) {
-						if ( ! $this->validate_gravatar( $email ) ) {
-							continue;
-						}
+					foreach ( $log_ids as $id ) {
+						// get the payment ID for each corresponding log ID
+						$payment_ids[] = get_post_meta( $id, '_edd_log_payment_id', true );
 					}
 
-					$unique_emails[$id] = get_post_meta( $id, '_edd_payment_user_email', true );
-
 				}
-
-				// strip duplicate emails
-				$unique_emails = array_unique( $unique_emails );
-
-				// convert the unique IDs back into simple array
-				foreach ( $unique_emails as $id => $email ) {
-					$unique_ids[] = $id;
-				}
-
-				// randomize the payment IDs if enabled
-				if ( isset( $edd_options['edd_pg_random_gravatars'] ) ) {
-					shuffle( $unique_ids );
-				}
-
-				// return our unique IDs
-				return $unique_ids;
 
 			}
+
+			// remove customers who have purchased more than once so we can have unique gravatar imagesw
+			$unique_emails = array();
+			$unique_ids    = array();
+
+			foreach ( $payment_ids as $key => $id ) {
+
+				$email = edd_get_payment_meta( $id, '_edd_payment_user_email', true );
+
+				if ( isset ( $edd_options['edd_pg_has_gravatar_account'] ) ) {
+					if ( ! $this->validate_gravatar( $email ) ) {
+						continue;
+					}
+				}
+
+				$unique_emails[$id] = $email;
+
+			}
+
+			// strip duplicate emails
+			$unique_emails = array_unique( $unique_emails );
+
+			// convert the unique IDs back into simple array
+			foreach ( $unique_emails as $id => $email ) {
+				$unique_ids[] = $id;
+			}
+
+			// randomize the payment IDs if enabled
+			if ( isset( $edd_options['edd_pg_random_gravatars'] ) ) {
+				shuffle( $unique_ids );
+			}
+
+			// return our unique IDs
+			return $unique_ids;
 
 		}
 
@@ -418,7 +432,7 @@ if ( ! class_exists( 'EDD_Purchase_Gravatars' ) ) {
 				// Use the previously noted array key as an array key again and next your settings
 				$edd_pg_settings = array( 'purchase_gravatars' => $edd_pg_settings );
 			}
-			
+
 			return array_merge( $sections, $edd_pg_settings );
 		}
 
